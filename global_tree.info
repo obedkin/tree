@@ -1,0 +1,14 @@
+name = GLOBAL Tree
+description = Универсальный модуль для древовидной структуры материалов одного типа
+package = + GLOBAL
+core = 7.x
+version = 7.x
+
+files[] = inc/GlobalTree.inc
+files[] = inc/GlobalTreeView.inc
+
+dependencies[] = fontawesome
+dependencies[] = entity
+dependencies[] = field
+dependencies[] = libraries
+dependencies[] = global_ajax_link

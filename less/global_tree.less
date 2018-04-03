@@ -1,0 +1,560 @@
+//Строка поиска
+div.top-search {
+  height: 40px;
+  input {
+    width: 85%;
+    border: 1px solid #e3e3e3 !important;
+    position: static !important;
+  }
+
+}
+
+//Выпадающий список поиска
+div.top-search-list {
+  z-index: 1000;
+  position: absolute;
+  background-color: white;
+  width: 85%;
+  display: none;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  border: 1px solid #dddddd;
+  color: #333333;
+  ul {
+    padding-left: 0;
+    li {
+      padding-left: 10px;
+      padding-top: 5px;
+      cursor: pointer;
+      //background-color: #CEE1EF;
+      background-color: white;
+      height: 25px;
+      font-size: 14px;
+      &:hover {
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        color: #C8770A;
+        border: 1px solid #C8770A;
+      }
+    }
+  }
+}
+
+//Верхник кнопки
+div.top-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  a {
+
+    &.btn_add {
+      background: -moz-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(160, 214, 154, 1)), color-stop(100%, rgba(55, 155, 84, 0.7)));
+      background: -webkit-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: -o-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: -ms-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: linear-gradient(to bottom, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#a0d69a', endColorstr='#b3379b54', GradientType=0);
+      &:before {
+        content: "";
+        background: url('../img/add_button_icon.png') center center no-repeat;
+        padding: 8px;
+        margin-right: 7px;
+      }
+    }
+
+    &.btn_close {
+      background: -moz-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(80, 141, 187, 1)), color-stop(100%, rgba(10, 82, 138, 0.7)));
+      background: -webkit-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: -o-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: -ms-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: linear-gradient(to bottom, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#508dbb', endColorstr='#b30a528a', GradientType=0);
+
+      &:before {
+        content: " ";
+        background: url('../img/folder_button_1.png') center center no-repeat;
+        padding: 8px;
+        margin-right: 7px;
+      }
+    }
+
+    &.btn_open {
+      background: -moz-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(80, 141, 187, 1)), color-stop(100%, rgba(10, 82, 138, 0.7)));
+      background: -webkit-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: -o-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: -ms-linear-gradient(top, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      background: linear-gradient(to bottom, rgba(80, 141, 187, 1) 0%, rgba(10, 82, 138, 0.7) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#508dbb', endColorstr='#b30a528a', GradientType=0);
+
+      &:before {
+        content: " ";
+        background: url('../img/folder_button_2.png') center center no-repeat;
+        padding: 8px;
+        margin-right: 7px;
+      }
+    }
+
+    &.btn_sort {
+      background: rgb(255, 168, 76);
+      background: -moz-linear-gradient(top, rgb(255, 168, 76) 0%, rgb(255, 123, 13) 100%);
+      background: -webkit-linear-gradient(top, rgb(255, 168, 76) 0%, rgb(255, 123, 13) 100%);
+      background: linear-gradient(to bottom, rgb(255, 168, 76) 0%, rgb(255, 123, 13) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffa84c', endColorstr='#ff7b0d', GradientType=0);
+      min-width: 20px;
+    }
+    &.btn_sort.active {
+      background: rgb(246, 230, 180);
+      background: -moz-linear-gradient(top, rgb(246, 230, 180) 0%, rgb(237, 144, 23) 100%);
+      background: -webkit-linear-gradient(top, rgb(246, 230, 180) 0%, rgb(237, 144, 23) 100%);
+      background: linear-gradient(to bottom, rgb(246, 230, 180) 0%, rgb(237, 144, 23) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f6e6b4', endColorstr='#ed9017', GradientType=0);
+    }
+
+    &.btn_check {
+      background: -moz-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(160, 214, 154, 1)), color-stop(100%, rgba(55, 155, 84, 0.7)));
+      background: -webkit-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: -o-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: -ms-linear-gradient(top, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      background: linear-gradient(to bottom, rgba(160, 214, 154, 1) 0%, rgba(55, 155, 84, 0.7) 100%);
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#a0d69a', endColorstr='#b3379b54', GradientType=0);
+      min-width: 20px;
+    }
+    &.btn_check.active {
+      background: rgb(205, 235, 142); /* Old browsers */
+      background: -moz-linear-gradient(top, rgb(205, 235, 142) 0%, rgb(165, 201, 86) 100%); /* FF3.6-15 */
+      background: -webkit-linear-gradient(top, rgb(205, 235, 142) 0%, rgb(165, 201, 86) 100%); /* Chrome10-25,Safari5.1-6 */
+      background: linear-gradient(to bottom, rgb(205, 235, 142) 0%, rgb(165, 201, 86) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#cdeb8e', endColorstr='#a5c956', GradientType=0); /* IE6-9 */
+    }
+
+    &.tree_btn {
+      margin: 0 5px;
+      margin-bottom: 12px;
+      padding: 5px;
+      border: 1px solid #bbb;
+      border-radius: 5px;
+      color: #fff;
+      text-decoration: none;
+    }
+  }
+}
+
+//Дерево
+ul.tree {
+  list-style-type: none;
+  padding: 0px;
+  margin: 0px;
+  font-size: 15px;
+
+  .item-list ul li {
+    margin: 0px;
+  }
+
+  ul.tree {
+    margin-left: 27px;
+    border-left: 1px dashed gray;
+    .tree_node {
+      .item_indent {
+        border-bottom: 1px dashed gray;
+      }
+      .item_wrapper {
+        border-bottom: 1px solid #E3E6E8;
+      }
+
+      .item_actions {
+        border-top: 1px solid #c6ccd4;
+      }
+
+    }
+  }
+
+  ul {
+    list-style-type: none;
+  }
+
+  li {
+    padding: 0;
+
+    .fixed{
+      overflow: hidden;
+    }
+
+    .tree_item.active {
+      background-color: #428bca !important;
+      color: white !important;
+      a {
+        color: white !important;
+      }
+      i.fa {
+        color: white !important;
+      }
+    }
+
+    &.level-1 {
+      margin-bottom: 0px;
+      margin-left: 0px;
+      background: #f8fafc;
+      border-bottom: 1px solid #CEDEEB;
+      & > .tree_item {
+        background: #eff3f8;
+        font-weight: bold;
+
+        &:hover {
+          background: #CEE1EF;
+        }
+
+        .item_wrapper {
+          .tree_item_content {
+            .item_label {
+              a {
+                color: #03508b;
+              }
+            }
+          }
+        }
+
+        .item_actions {
+          background: #b2becc;
+        }
+      }
+
+    }
+
+    &.level-2 {
+      &.first {
+        & > .tree_node {
+          .item_wrapper {
+            border-top: none;
+          }
+
+          .item_actions {
+            border-top: none;
+          }
+
+        }
+      }
+
+      & > .tree_node {
+        .item_wrapper {
+          .tree_item_content {
+            .item_label {
+              a {
+                color: #4a89b9;
+                font-size: 14px;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    &.level-3 {
+      .tree_node {
+        .item_wrapper {
+          .tree_item_content {
+            .item_label {
+              a {
+                color: #81909c;
+                font-size: 13px;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .tree_node {
+      padding-left: 0;
+      display: flex;
+      align-items: stretch;
+      flex-flow: row nowrap;
+      min-height: 30px;
+
+      &:hover {
+        background: #CEE1EF;
+      }
+
+      .item_indent {
+        width: 20px;
+        align-self: center;
+      }
+
+      .item_wrapper {
+        display: flex;
+        align-items: center;
+        flex-flow: row nowrap;
+        flex: 20;
+
+        .tree_item_content {
+          display: flex;
+          flex: 3;
+          align-items: center;
+          flex-flow: row nowrap;
+          line-height: 10px;
+          .item_toggled {
+            flex: 0 0 40px;
+            width: 40px;
+            height: 100%;
+            .ajax-progress {
+              display: none; //Прячем крутилку около раскрытия элементов дерева
+            }
+          }
+          .item_label {
+            a {
+              color: #4a89b9;
+              line-height: 14px;
+            }
+          }
+        }
+
+        .tree_item_attributes {
+          flex: 1;
+          line-height: 10px;
+          text-align: right;
+          font-size: 14px !important;
+          margin-right: 3px !important;
+
+          .btn-check {
+            height: 32px;
+            margin-left: 5px;
+          }
+
+        }
+      }
+      .item_forms {
+        display: block;
+        float: left;
+        clear: both;
+      }
+      .item_actions {
+        display: flex;
+        min-width: 20px;
+        flex: 0 0 auto;
+        background: #d6dce4;
+
+        .toggle_actions {
+          flex: 0 0 20px;
+          background: transparent url('../img/arrow_right.png') center center no-repeat;
+          cursor: pointer;
+          border-right: 1px solid #ccc;
+        }
+
+        .actions_wrapper {
+          display: flex;
+          align-items: center;
+          padding: 0 5px;
+          .tree_btn {
+            width: 29px;
+            border: 1px #b2becc solid;
+            border-radius: 15px;
+            height: 24px;
+            margin-right: 2px;
+            padding: 0 5px;
+            &.active {
+              border-bottom: 5px solid #ccc;
+            }
+          }
+          .btn_add {
+            background: #b2becc url('../img/add.png') center center no-repeat;
+          }
+          .btn_edit {
+            background: #b2becc url('../img/edit.png') center center no-repeat;
+          }
+          .btn_delete {
+            background: #b2becc url('../img/delete.png') center center no-repeat;
+          }
+          .btn_copy {
+            background: #b2becc url('../img/copy.png') center center no-repeat;
+          }
+        }
+      }
+    }
+
+    a {
+      text-decoration: none;
+    }
+    i.fa {
+      color: white;
+      cursor: pointer
+    }
+
+  }
+}
+
+// Форма добавления элементов в дерево
+.form-add, .form-copy, .form-delete {
+  .form-item-title {
+    width: 100%;
+    padding-right: 0px;
+  }
+  .well {
+    color: black;
+    margin-bottom: 3px;
+  }
+  .form-group {
+    margin-bottom: 0 !important;
+  }
+  .input-group-btn {
+    vertical-align: top !important;
+  }
+}
+
+//Форма удаления элементов
+.form-delete {
+  .chosen-container.form-control {
+    width: 100% !important;
+  }
+}
+
+//Таблица для корневой страницы по ВС
+table.vs tr td {
+  border: none !important;
+  padding: 0 10px !important;
+  vertical-align: middle !important;
+  &.right {
+    text-align: right !important;
+  }
+  &.left {
+    text-align: left !important;
+  }
+  .progress {
+    margin-bottom: 0 !important;
+  }
+}
+
+// Иконки папочек
+@icon_size: 16px;
+.i-full {
+  vertical-align: middle;
+  &.i-open {
+    background: transparent url('../img/opened.png') center center no-repeat;
+    display: inline-block;
+    width: @icon_size;
+    height: @icon_size;
+  }
+  &.i-close {
+    background: transparent url('../img/closed.png') center center no-repeat;
+    display: inline-block;
+    width: @icon_size;
+    height: @icon_size;
+  }
+  + .fa {
+    display: none;
+  }
+}
+
+.i-empty {
+  vertical-align: middle;
+  &.i-open {
+    display: inline-block;
+    width: @icon_size;
+    height: @icon_size;
+  }
+  &.i-close {
+    display: inline-block;
+    width: @icon_size;
+    height: @icon_size;
+  }
+  + .fa {
+    display: none;
+  }
+}
+
+// Killer bootstrap
+// TODO: Почему не удалось встроить в уже существующую иерархию css-кода
+.item_forms {
+  .collapse {
+    display: none;
+  }
+}
+
+.btn_add, .btn_delete, .btn_edit, .btn_copy, .toggle_actions {
+  display: block !important;
+}
+
+.fa-submit {
+  color: white;
+}
+
+#div-form-add- {
+  display: none;
+  cursor: pointer;
+}
+
+.tree, #div-form-add- {
+  .form-item {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .form-wrapper {
+    display: flex;
+    align-items: center;
+    input {
+      width: 100%;
+      height: 30px;
+      padding: 0px 5px;
+      margin: 0px;
+      border: 0px solid #9A9A9A;
+      font-size: 13px;
+      outline-style: inset;
+      outline-offset: -1px;
+      outline-color: #9A9A9A;
+      outline-width: 1px;
+    }
+    .span-submit {
+      border-bottom-right-radius: 5px;
+      border-top-right-radius: 5px;
+      vertical-align: middle;
+      width: 29px;
+      height: 30px;
+      text-align: center;
+      align-items: center;
+      display: flex;
+      cursor: pointer;
+      justify-content: center;
+
+      &._add {
+        background-color: rgb(31, 162, 31);
+      }
+      &._copy {
+        background-color: blue;
+      }
+      &._edit {
+        background-color: orange;
+      }
+    }
+  }
+}
+
+// Т.к. планируется без использования bootstrap
+.hide {
+  display: none !important;
+}
+
+.label {
+  display: inline;
+  padding: .2em .6em .3em;
+  font-size: 75%;
+  font-weight: bold;
+  line-height: 1;
+  color: #ffffff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: .25em;
+}
+
+.label-success {
+  background-color: #5cb85c;
+}
+
+.label-success[href]:hover,
+.label-success[href]:focus {
+  background-color: #449d44;
+}

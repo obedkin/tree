@@ -1,0 +1,494 @@
+<?php
+
+module_load_include('inc', 'global_tree', 'inc/global_tree_add');
+module_load_include('inc', 'global_tree', 'inc/global_tree_api');
+module_load_include('inc', 'global_tree', 'inc/global_tree_check');
+module_load_include('inc', 'global_tree', 'inc/global_tree_search');
+
+/**
+ * Implements hook_permission().
+ */
+function global_tree_permission() {
+  return array(
+    'access global_tree settings' => array(
+      'title' => 'Доступ к странице настроек раздела "Дерево"',
+      'description' => '',
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+
+/**
+ * Hook MENU
+ *
+ * @return array
+ */
+function global_tree_menu() {
+  $items = array();
+
+  $items['admin/global/tree'] = array(
+    'title' => 'Дерево',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access global_tree settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/global/tree/views_field_settings'] = array(
+    'title' => 'Настройки полей для Views в деревьях',
+    'description' => 'Настройки полей для Views в деревьях',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('global_tree_views_field_settings_form'),
+    'access arguments' => array('access global_tree settings'),
+    'weight' => 1,
+  );
+
+  // Cортировка
+  $items['global_tree/sortable'] = array(
+    'page callback' => 'global_tree_sortable_callback',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/global_tree_sortable.inc',
+  );
+
+  // Выборка
+  $items['global_tree/check/%'] = array(
+    'page callback' => 'global_tree_check_show',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // Поиск
+  $items['global_tree/search/%'] = array(
+    'page callback' => 'global_tree_search_callback',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Form builder.
+ */
+function global_tree_views_field_settings_form($form, &$form_state) {
+  $form['views_field_settings_tree'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Настройки полей для Views в деревьях',
+    '#description' => "views1;views2;all|display1;display2;all|field1|field_parent",
+    '#default_value' => variable_get('views_field_settings_tree', ''),
+  );
+
+  // TODO! You probably don't need validation or submit handlers if using system_settings_form().
+  return system_settings_form($form);
+}
+
+
+function global_tree_views_query_alter(&$view, &$query) {
+  if (isset($query->where)) {
+    $settings = variable_get('views_field_settings_tree', '');
+    $settings = explode("\r\n", $settings);
+    foreach ($query->where as &$item) {
+      if (isset($item['conditions'])) {
+        foreach ($item['conditions'] as &$condition) {
+
+          //Для всех доступных сеттингов проверяем
+          foreach ($settings as $setting) {
+            $parts = explode("|", $setting);
+            if (isset($parts[0])) {
+              $views = explode(";", $parts[0]);
+            }
+            else {
+              $views = array("none");
+            }
+
+            if (isset($parts[1])) {
+              $displays = explode(";", $parts[1]);
+            }
+            else {
+              $displays = array("none");
+            }
+
+            if (isset($parts[2])) {
+              $field = $parts[2];
+            }
+            else {
+              $field = "none";
+            }
+
+            if (isset($parts[3])) {
+              $field_parent = $parts[3];
+            }
+            else {
+              $field_parent = "none";
+            }
+
+            //Проверяем есть ли вьюха и дисплэй в списке разрешенных
+            if ((in_array($view->name, $views) || in_array("all", $views)) && (in_array($view->current_display, $displays) || in_array("all", $displays))) {
+              //all|all|field_ltx_vvts|field_ltx_vvt
+              $field_obj = field_info_field($field);
+              $table = current(array_keys($field_obj['storage']['details']['sql']['FIELD_LOAD_CURRENT']));
+
+              if (isset($field_obj['storage']['details']['sql']['FIELD_LOAD_CURRENT'][$table]['nid'])) {
+                $column = $field_obj['storage']['details']['sql']['FIELD_LOAD_CURRENT'][$table]['nid'];
+              }
+              elseif (isset($field_obj['storage']['details']['sql']['FIELD_LOAD_CURRENT'][$table]['target_id'])) {
+                $column = $field_obj['storage']['details']['sql']['FIELD_LOAD_CURRENT'][$table]['target_id'];
+              }
+              else {
+                dpm("No column =(");
+              }
+
+              $strpos = FALSE;
+              if (isset($condition['field']) && is_string($condition['field'])) {
+                $strpos = strpos($condition['field'], $table . '.' . $column);
+              }
+
+              if ($strpos !== FALSE) {
+                $new_values = array();
+                foreach ($condition['value'] as $el) {
+                  if (is_array($el)) {
+                    $el = current($el);
+                  }
+                  $childs = global_tree_get_all_childs($el, $field_parent);
+                  array_unshift($childs, $el);
+
+                  $new_values = array_merge($new_values, $childs);
+                }
+
+                if (isset($condition['value']) && is_array($condition['value'])) {
+                  $first_key = current(array_keys($condition['value']));
+
+                  //Если это контекстный фильтр, то там есть костыль в виде плэйсхолдеров, мы их тоже заменяем на нужные для множественного значения
+                  if (strpos($first_key, ":") === 0) {
+                    $condition['value'][$first_key] = $new_values;
+                    $condition['field'] = str_replace(" = ", " IN(", $condition['field']) . ")";
+                  }
+                  else {
+                    $condition['value'] = $new_values;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * @return array
+ */
+function global_tree_ajax() {
+  $options = drupal_get_query_parameters();
+  return global_tree_load($options);
+}
+
+
+/**
+ * AJAX-функция для загрузки поддерева при клике по закрытой папке
+ *
+ * @param $options Стандартный набор опций для класса Global_Tree для
+ *   построения дерева
+ *
+ * @return array список ajax-комманд
+ */
+function global_tree_load($options) {
+  $tree = new $options['class']($options);//Создаем объект дочернего класса
+  $tree_html = $tree->get_tree_html();
+  $childs_count = $tree->get_childs_count();
+  if ($options['root_id']) {
+    if ($options['root_id'] != $options['root']) {
+      //Если это не корневой элемент и не массив корневых элементов
+      $commands[] = ajax_command_after('#i-' . $options['root_id'] . ' #data-' . $options['root_id'], $tree_html);                        // Рисуем поддерево
+      $commands[] = ajax_command_invoke('#i-' . $options['root_id'], 'addClass', array('load opened')); //Отмечаем что список открыт
+      if ($childs_count) {//Если есть дети
+        $commands[] = ajax_command_replace('#i-' . $options['root_id'] . ' #data-' . $options['root_id'] . ' .icon-open', '<a class="icon-open" href="#"><div class="i-open i-full"></div><span class="fa fa-folder-open"></span></a>'); // Меняем иконку
+      }
+      else {//Если нет детей
+        $commands[] = ajax_command_replace('#i-' . $options['root_id'] . ' #data-' . $options['root_id'] . ' .icon-open', '<a class="icon-open" href="#"><div class="i-open i-empty"><span class="fa fa-folder-open-o"></span></a>'); // Меняем иконку
+        $commands[] = ajax_command_invoke('#i-' . $options['root_id'], 'addClass', array('empty'));
+      }
+    }
+    else {
+      $commands[] = ajax_command_remove('.tree-top');
+      $commands[] = ajax_command_replace('#tree-' . $options['root'], $tree_html); //Обновляем корневые элементы дерева
+    }
+  }
+  else {
+    $commands[] = ajax_command_remove('.tree-top');
+    $commands[] = ajax_command_replace('#tree-', $tree_html); //Обновляем корневые элементы дерева
+  }
+
+  return $commands;
+}
+
+
+/**
+ * AJAX-функция добавления объектов в дерево
+ * Со входными параметрами _options вызывается ф-ия ADD глобавльного класса,
+ * либо переопределенная для каждго дочернего класса. На выходе ф-ия дает ID
+ * нового созданного объекта. После успешного создания объекта переходит
+ * редирект на страницу с этим объектом.
+ *
+ * @return array _commands набор AJAX-команд
+ */
+function global_tree_add() {
+  $options = drupal_get_query_parameters();
+  $commands = array();
+  $nid = $options['class']::add($options);//Создаем новый объект в дереве типа дочернего класса
+  $commands[] = ctools_ajax_command_redirect($options['url'] . '/' . $nid);
+  return $commands;
+}
+
+
+/**
+ * AJAX-функция для удаления элементов дерева
+ *
+ * @return array
+ */
+function global_tree_delete() {
+  $options = drupal_get_query_parameters();
+  $options['class']::delete($options);
+  $commands = array();
+  $commands[] = ajax_command_remove("#i-" . $options['root_id']);
+  return $commands;
+}
+
+
+/**
+ * AJAX-функция раскрытия всего дерева
+ *
+ * @return array набор AJAX-команд
+ */
+function global_tree_open() {
+  $options = drupal_get_query_parameters();
+  $root_id = '';
+
+  // Если есть 1 элемент и это не массив. Нужно для разворачивания всего дерева
+  if (isset($options['root_id']) && (!is_array($options['root_id']))) {
+    $root_id = $options['root_id'];
+  }
+
+  $options['level'] = 0;
+  $options['all_open'] = TRUE;
+  $tree = new $options['class']($options);
+  $tree_html = $tree->get_tree_html();
+  $commands[] = ajax_command_remove('.tree-top');
+  $commands[] = ajax_command_replace('#tree-' . $root_id, $tree_html); //Обновляем корневые элементы дерева
+  return $commands;
+}
+
+/**
+ * AJAX-функция закрытия всего дерева. Выполняются только JS-скрипты по скрытию
+ * ненужных элементов и изменению вида папок.
+ *
+ * @return array-ajax-commands
+ */
+function global_tree_close() {
+  $commands = array();
+  $commands[] = ajax_command_invoke('li.opened ul', 'hide');
+  $commands[] = ajax_command_invoke('li.opened>div>a>.fa-folder-open', 'addClass', array('fa-folder'));
+  $commands[] = ajax_command_invoke('li.opened>div>a>.fa-folder-open', 'removeClass', array('fa-folder-open'));
+  $commands[] = ajax_command_invoke('.i-open', 'addClass', array('i-close'));
+  $commands[] = ajax_command_invoke('.i-open', 'removeClass', array('i-open'));
+  $commands[] = ajax_command_invoke('li.opened>div>a>.fa-folder-open-o', 'addClass', array('fa-folder-o'));
+  $commands[] = ajax_command_invoke('li.opened>div>a>.fa-folder-open-o', 'removeClass', array('fa-folder-open-o'));
+  $commands[] = ajax_command_invoke('li.opened', 'addClass', array('closed'));
+  $commands[] = ajax_command_invoke('li.opened', 'removeClass', array('opened'));
+  return $commands;
+}
+
+
+/**
+ * Функция со списком ajax-функций, которы можно выполнять через l_ajax
+ *
+ * @return array список названия функций
+ */
+function global_tree_l_ajax_access() {
+  return array(
+    'global_tree_ajax' => array('authenticated user', 'anonymous user'),
+    'global_tree_add' => array('authenticated user'),
+    'global_tree_delete' => array('authenticated user'),
+    'global_tree_copy' => array('authenticated user'),
+    'global_tree_open' => array('authenticated user', 'anonymous user'),
+    'global_tree_close' => array('authenticated user', 'anonymous user'),
+  );
+}
+
+
+/**
+ * Implements hook_enable().
+ */
+function global_tree_enable() {
+  global $databases;
+  $db_host = $databases['default']['default']['host'];
+  $db_user = $databases['default']['default']['username'];
+  $db_pass = $databases['default']['default']['password'];
+  $db_name = $databases['default']['default']['database'];
+  $db_port = $databases['default']['default']['port'];
+
+  $port_string = "";
+  if ($db_port) {
+    $port_string = " --port=" . $db_port . " ";
+  }
+
+  $procedures = array("get_tree_childs", "get_tree_parents");
+  foreach ($procedures as $procedure) {
+    $filepath = drupal_get_path("module", "global_tree") . "/files/" . $procedure . ".sql";
+    //Заменяем в файле имя БД динамически
+    $data = file_get_contents($filepath);
+    $data = str_replace("SAMPLE_DATABASE_NAME", $db_name, $data);
+    $tmp_filename = file_directory_temp() . '/' . drupal_basename($filepath);
+    if (file_put_contents($tmp_filename, $data) === FALSE) {
+      drupal_set_message('Не удалось записать файл %file.', array(
+        '%file' =>
+          $tmp_filename,
+      ), 'error');
+      watchdog('error', 'Не удалось записать файл %file.', array(
+        '%file' =>
+          $tmp_filename,
+      ));
+      return;
+    }
+    else {
+      $tmp_filename = drupal_realpath($tmp_filename);
+      $mysql_paths = array();
+      $mysql_paths[] = '/Applications/MAMP/Library/bin/mysql';  //Mac Mamp
+      $mysql_paths[] = 'c:\xampp\mysql\bin\mysql.exe';//XAMPP
+      $mysql_paths[] = '/usr/bin/mysql';  //Linux
+      $mysql_paths[] = '/usr/local/bin/mysql'; //Linux
+      $mysql_paths[] = '/usr/mysql/bin/mysql'; //Linux
+      $mysql_paths[] = '/usr/local/mysql/bin/mysql'; //Mac
+      foreach ($mysql_paths as $mysql_cmd) {
+        if (is_executable($mysql_cmd)) {
+          $execute_command = "$mysql_cmd --host=$db_host $port_string --user=$db_user --password=$db_pass --delimiter=\"//\" $db_name  < $tmp_filename";
+          exec($execute_command, $out, $status);
+          if (empty($status)) {
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+/*
+ * Функция API для получения всех детей по дереву вниз
+ */
+function global_tree_get_all_childs($entity_id, $parent_field) {
+  //Получаем префикс для таблиц если есть
+  global $databases;
+  if (isset($databases['default']['default']['database'])) {
+    if (isset($databases['default']['default']['prefix']) && is_array($databases['default']['default']['prefix']) && isset($databases['default']['default']['prefix']['default'])) {
+      $table_prefix = $databases['default']['default']['prefix']['default'];
+    }
+    else {
+      $table_prefix = $databases['default']['default']['prefix'];
+    }
+  }
+  else {
+    $table_prefix = "";
+  }
+
+  // Вот тут добавил
+  // А то префикс в некоторых случаях получался null и ломал запрос
+  if (!$table_prefix) {
+    $table_prefix = "";
+  }
+
+  $e = entity_metadata_wrapper("node", $entity_id);
+  $bundle = $e->getBundle();
+
+
+  //Получаем суффикс поля если есть (как правило это nid, tid, target_id)
+  $field = field_info_field($parent_field);
+  $field_suffix = current(array_keys($field['columns']));
+
+
+  if ($field && $bundle) {
+    $conn = Database::getConnection();
+    $saved_class = $conn->getAttribute(PDO::ATTR_STATEMENT_CLASS);
+
+    $conn->setAttribute(PDO::ATTR_STATEMENT_CLASS, array('PDOStatement'));
+
+    $stmt = $conn->prepare("CALL GetTreeChilds(:in_id, :in_field, :in_table_prefix, :in_field_suffix, :in_bundle)");
+    $stmt->bindParam(':in_id', $entity_id);
+    $stmt->bindParam(':in_field', $parent_field);
+    $stmt->bindParam(':in_table_prefix', $table_prefix);
+    $stmt->bindParam(':in_field_suffix', $field_suffix);
+    $stmt->bindParam(':in_bundle', $bundle);
+
+    $stmt->execute();
+
+    $outputArray = $stmt->fetch(PDO::FETCH_ASSOC);
+    $conn->setAttribute(PDO::ATTR_STATEMENT_CLASS, $saved_class);
+
+    $res = explode(",", $outputArray['child_ids']);
+  }
+  else {
+    $res = array();
+  }
+
+  $res = array_filter($res);
+  return $res;
+}
+
+
+/*
+ * Функция API для получения всех родителей по дереву вверх
+ */
+function global_tree_get_all_parents($entity_id, $parent_field) {
+  //Получаем префикс для таблиц если есть
+  global $databases;
+  if (isset($databases['default']['default']['database'])) {
+    if (isset($databases['default']['default']['prefix']) && is_array($databases['default']['default']['prefix']) && isset($databases['default']['default']['prefix']['default'])) {
+      $table_prefix = $databases['default']['default']['prefix']['default'];
+    }
+    else {
+      $table_prefix = $databases['default']['default']['prefix'];
+    }
+  }
+  else {
+    $table_prefix = "";
+  }
+
+  // Вот тут добавил
+  // А то префикс в некоторых случаях получался null и ломал запрос
+  if (!$table_prefix) {
+    $table_prefix = "";
+  }
+
+  //Получаем суффикс поля если есть (как правило это nid, tid, target_id)
+  $field = field_info_field($parent_field);
+  $field_suffix = current(array_keys($field['columns']));
+
+
+  $conn = Database::getConnection();
+  $saved_class = $conn->getAttribute(PDO::ATTR_STATEMENT_CLASS);
+
+  $conn->setAttribute(PDO::ATTR_STATEMENT_CLASS, array('PDOStatement'));
+
+  $stmt = $conn->prepare("CALL GetTreeParents(:in_id, :in_field, :in_table_prefix, :in_field_suffix)");
+  $stmt->bindParam(':in_id', $entity_id);
+  $stmt->bindParam(':in_field', $parent_field);
+  $stmt->bindParam(':in_table_prefix', $table_prefix);
+  $stmt->bindParam(':in_field_suffix', $field_suffix);
+
+  $stmt->execute();
+
+  $outputArray = $stmt->fetch(PDO::FETCH_ASSOC);
+  $conn->setAttribute(PDO::ATTR_STATEMENT_CLASS, $saved_class);
+
+  //Database::closeConnection();
+
+  $res = explode(",", $outputArray['parents_ids']);
+  $res = array_filter($res);
+
+  return $res;
+}
